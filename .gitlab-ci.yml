@@ -1,4 +1,5 @@
-stages: -install
+stages:
+  - install
 
 Npm ci:
   stage: install
