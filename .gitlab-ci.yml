@@ -51,8 +51,8 @@ Build docker:
     - docker:dind
   variables:
     IMAGE_NAME: yogurt7v/art-generator-nginx
-  only: master
-  when: main
+  only: main
+  when: manual
   script:
     - docker login -u ${CI_USER} -p ${CI_PASSWORD}
     - docker build -f frontend.dockerfile -t ${IMAGE_NAME} .
@@ -65,8 +65,9 @@ Build docker:
 
 Deploy:
   stage: deploy
-  only: master
-  when: main
+  only:
+    - main
+  when: manual
   image: ringcentral/sshpass
   script:
     - sshpass -p ${SSH_PASS} ssh ${SSH_HOST} -o stricthostkeychecking=no "
