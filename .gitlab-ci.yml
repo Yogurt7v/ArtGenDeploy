@@ -1,5 +1,8 @@
 stages:
   - install
+  - build
+  - test
+  # - deploy
 
 Npm ci:
   stage: install
@@ -7,3 +10,27 @@ Npm ci:
   script:
     - cd frontend
     - npm ci
+  cache:
+    policy: push
+    key: $CI_COMMIT_REF_SLUG
+    paths:
+      - 'frontend/node_modules'
+
+Build:
+  stage: build
+  image: node:18
+  script:
+    - cd frontend
+    - npm run build
+  cache:
+    policy: pull
+    key: $CI_COMMIT_REF_SLUG
+    paths:
+      - 'frontend/node_modules'
+
+Test:
+  stage: test
+  image: node:18
+  script:
+    - cd frontend
+    - npm run test
