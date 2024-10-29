@@ -1,8 +1,9 @@
 stages:
   - install
   - build
+  - build_docker
   - test
-  # - deploy
+  - deploy
 
 Npm ci:
   stage: install
@@ -12,7 +13,7 @@ Npm ci:
     - npm ci
   cache:
     policy: push
-    key: $CI_COMMIT_REF_SLUG
+    key: ${CI_COMMIT_REF_SLUG} -modules
     paths:
       - 'frontend/node_modules'
 
@@ -23,14 +24,59 @@ Build:
     - cd frontend
     - npm run build
   cache:
-    policy: pull
-    key: $CI_COMMIT_REF_SLUG
-    paths:
-      - 'frontend/node_modules'
-
+    - key: ${CI_COMMIT_REF_SLUG} -modules
+      policy: pull
+      paths:
+        - 'frontend/node_modules'
+    - key: ${CI_COMMIT_REF_SLUG} -build
+      policy: push
+      paths:
+        - 'frontend/build'
 Test:
   stage: test
   image: node:18
   script:
     - cd frontend
     - npm run test
+  cache:
+    policy: pull
+    key: ${CI_COMMIT_REF_SLUG} -modules
+    paths:
+      - 'frontend/node_modules'
+
+Build docker:
+  stage: build_docker
+  image: docker
+  services:
+    - docker:dind
+  variables:
+    IMAGE_NAME: yogurt7v/art-generator-nginx
+  only: master
+  when: main
+  script:
+    - docker login -u ${CI_USER} -p ${CI_PASSWORD}
+    - docker build -f frontend.dockerfile -t ${IMAGE_NAME} .
+    - docker push ${IMAGE_NAME}IMAGE_NAME
+  cache:
+    policy: pull
+    key: ${CI_COMMIT_REF_SLUG} -build
+    paths:
+      - 'frontend/build'
+
+Deploy:
+  stage: deploy
+  only: master
+  when: main
+  image: ringcentral/sshpass
+  script:
+    - sshpass -p ${SSH_PASS} ssh ${SSH_HOST} -o stricthostkeychecking=no "
+    - cd ArtGenDeploy &&
+    - git pull &&
+    - docker compose pull nginx &&
+    - docker compose stop nginx &&
+    - docker compose up -d nginx "
+  cache:
+    policy: pull
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - 'frontend/node_modules'
