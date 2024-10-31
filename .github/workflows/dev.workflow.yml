@@ -21,5 +21,5 @@ jobs:
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
-          publish_dir: ../frontend/build
+          publish_dir: ./frontend/build
           github_token: ${{ secrets.GITHUB_TOKEN }}
